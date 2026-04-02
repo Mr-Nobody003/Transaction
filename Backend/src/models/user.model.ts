@@ -1,10 +1,25 @@
 import mongoose from "mongoose";
+import { Schema, model, Document, Model } from 'mongoose';
 import bcrypt from "bcryptjs";
 
-const userSchema = new mongoose.Schema({
+interface IUser {
+    name: string;
+    email: string;
+    password: string;
+    createdAt: Date;
+}
+
+interface IUserMethods {
+    comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+type UserDocument = IUser & Document & IUserMethods;
+
+const userSchema = new Schema<UserDocument, Model<UserDocument>, IUserMethods>({
     name: {
         type: String,
         required: [true, "Name is required"],
+        maxlength: [300, "Name must be less than 300 characters long"],
     },
 
     email: {
@@ -13,8 +28,8 @@ const userSchema = new mongoose.Schema({
         trim: true,
         lowercase: true,
         unique: [true, "Email already exists"],
-        match: [/^.+@(?:\w-]+\.)+\w+$/
-            , "Please fill a valid email address"]
+        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+            "Please fill a valid email address"]
     },
 
     password: {
@@ -24,22 +39,22 @@ const userSchema = new mongoose.Schema({
         select: false
     },
     createdAt: { type: Date, default: Date.now }
-}, 
-{ 
-    timestamps: true 
-});
+},
+    {
+        timestamps: true
+    });
 
-userSchema.pre("save" as any, async function(next: (err?: Error) => void) {
-    
+userSchema.pre("save" as any, async function () {
+
     if (!this.isModified("password")) {
-        return next();
+        return;
     }
     try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
-        next();
+
     } catch (error) {
-        next(error as Error);
+        throw new Error("Error hashing password");
     }
 });
 
@@ -47,5 +62,6 @@ userSchema.methods.comparePassword = async function (Password: string): Promise<
     return await bcrypt.compare(Password, this.password);
 }
 
+const UserModel = model<UserDocument, Model<UserDocument>>('User', userSchema);
 
-export const userModel = mongoose.model("User", userSchema);
+export default UserModel;
