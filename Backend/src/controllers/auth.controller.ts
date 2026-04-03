@@ -1,5 +1,6 @@
-import userModel  from "../models/user.model.js";
+import UserModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import sendRegistrationEmail from "../services/gmail.service.js";
 
 /**
  * @description User Registration Controller
@@ -9,7 +10,7 @@ import jwt from "jsonwebtoken";
 async function userRegisterController(req: any, res: any) {
     const { name, email, password } = req.body;
 
-    const existingUser = await userModel.findOne(
+    const existingUser = await UserModel.findOne(
         {
             email: email
         }
@@ -24,7 +25,7 @@ async function userRegisterController(req: any, res: any) {
         );
     }
 
-    const user = await userModel.create({
+    const user = await UserModel.create({
         name,
         email,
         password
@@ -50,6 +51,9 @@ async function userRegisterController(req: any, res: any) {
         }
     );
 
+    // Send registration email
+    await sendRegistrationEmail(user.email, user.name);
+
 }
 
 
@@ -58,7 +62,7 @@ async function userRegisterController(req: any, res: any) {
  * @route POST /api/v1/auth/login
  * @access Public
  */
-async function userLoginController(req: any, res: any){
+async function userLoginController(req: any, res: any) {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -70,7 +74,7 @@ async function userLoginController(req: any, res: any){
         );
     }
 
-    const user= await userModel.findOne({ email }).select("+password") ;
+    const user = await UserModel.findOne({ email }).select("+password");
 
     if (!user) {
         return res.status(401).json(
@@ -112,6 +116,8 @@ async function userLoginController(req: any, res: any){
     );
 
 }
+
+
 
 
 

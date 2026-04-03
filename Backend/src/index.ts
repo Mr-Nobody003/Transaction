@@ -1,22 +1,32 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { connecttodb } from './config/db.js';
-import router from './routes/auth.router.js';
 import cookieParser from 'cookie-parser';
+
+/**
+ * @description Import Routes
+ */
+import authRouter from './routes/auth.route.js';
+import accountRouter from './routes/account.route.js';
+
+
 dotenv.config();
 
 const app = express();
 const port: number = 3000;
-const authRouter = router;
 
 
 app.use(express.json());
 app.use(cookieParser());
+
+/**
+ * @description use Routes
+ */
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/accounts", accountRouter);
 
 
-
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
     res.send("Hello World");
 });
 
@@ -38,4 +48,3 @@ async function startServer() {
 }
 
 startServer();
-

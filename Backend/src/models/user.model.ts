@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { Schema, model, Document, Model } from 'mongoose';
 import bcrypt from "bcryptjs";
 
@@ -10,7 +9,7 @@ interface IUser {
 }
 
 interface IUserMethods {
-    comparePassword(candidatePassword: string): Promise<boolean>;
+    comparePassword(AccessingUserPassword: string): Promise<boolean>;
 }
 
 type UserDocument = IUser & Document & IUserMethods;
