@@ -1,10 +1,12 @@
+import { Request, Response, NextFunction } from 'express';
 import AccountModel from "../models/account.model.js";
 
 /**
- * 
- * @description After user is Authorised create account 
+ * @description Account Creation Controller
+ * @route POST /api/v1/accounts
+ * @access Public
  */
-async function createAccountController(req: any, res: any) {
+async function createAccountController(req: Request, res: Response) {
     const user = req.user;
     const account = await AccountModel.create(
         {

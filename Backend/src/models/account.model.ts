@@ -11,8 +11,8 @@ type AccountDocument = IAccount & Document;
 const accountSchema = new Schema<AccountDocument, Model<AccountDocument>>({
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "user", //reference to user model
-        required: [true, "Account mush be associated witha user"],
+        ref: "User", //reference to user model
+        required: [true, "Account must be associated witha user"],
         index: true //to find data fast
     },
 
