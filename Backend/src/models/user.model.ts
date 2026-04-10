@@ -6,6 +6,7 @@ interface IUser {
     email: string;
     password: string;
     createdAt: Date;
+    systemUser: boolean;
 }
 
 interface IUserMethods {
@@ -37,13 +38,20 @@ const userSchema = new Schema<UserDocument, Model<UserDocument>, IUserMethods>({
         minlength: [6, "Password must be at least 6 characters long"],
         select: false
     },
+    systemUser: {
+        type: Boolean,
+        default: false,
+        required: true,
+        immutable: true,
+        select: false
+    },
     createdAt: { type: Date, default: Date.now }
 },
     {
         timestamps: true
     });
 
-userSchema.pre("save" as any, async function () {
+userSchema.pre("save", async function (this: UserDocument) {
 
     if (!this.isModified("password")) {
         return;

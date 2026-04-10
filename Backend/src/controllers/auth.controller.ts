@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import UserModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import sendRegistrationEmail from "../services/gmail.service.js";
+import { sendRegistrationEmail } from "../services/gmail.service.js";
 
 /**
  * @description User Registration Controller
@@ -38,7 +38,11 @@ async function userRegisterController(req: Request, res: Response) {
         { expiresIn: "3d" }
     );
 
-    res.cookie("token", token);
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    });
     res.status(201).json(
         {
             user: {
@@ -102,7 +106,11 @@ async function userLoginController(req: Request, res: Response) {
         process.env.JWT_SECRET as string,
         { expiresIn: "3d" }
     );
-    res.cookie("token", token);
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    });
     res.status(200).json(
         {
             user: {

@@ -24,7 +24,7 @@ app.use(cookieParser());
  */
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/accounts", accountRouter);
-app.use("/api/v1/transactions",transactionRouter);
+app.use("/api/v1/transactions", transactionRouter);
 
 
 app.get("/", (req, res) => {

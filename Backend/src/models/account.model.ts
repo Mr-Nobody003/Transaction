@@ -1,4 +1,5 @@
 import mongoose, { Schema, model, Document, Model } from 'mongoose';
+import LedgerModel from './ledger.model.js';
 
 interface IAccount {
     user: mongoose.Schema.Types.ObjectId;
@@ -6,9 +7,13 @@ interface IAccount {
     currency: string;
 }
 
-type AccountDocument = IAccount & Document;
+interface IAccountMethods {
+    getBalance(): Promise<any>;
+}
 
-const accountSchema = new Schema<AccountDocument, Model<AccountDocument>>({
+type AccountDocument = IAccount & Document & IAccountMethods;
+
+const accountSchema = new Schema<AccountDocument, Model<AccountDocument>, IAccountMethods>({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User", //reference to user model
@@ -39,6 +44,57 @@ const accountSchema = new Schema<AccountDocument, Model<AccountDocument>>({
 
 //compound index
 accountSchema.index({ user: 1, status: 1 }) //to index user , status 
+
+
+
+accountSchema.methods.getBalance = async function () {
+    const balanceData = await LedgerModel.aggregate([
+        {
+            $match: {
+                account: this._id
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalDebit: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $eq: ["$type", "DEBIT"]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                },
+                totalCredit: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $eq: ["$type", "CREDIT"]
+                            },
+                            "$amount",
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                balance: {
+                    $subtract: ["totalCredit", "totalDebit"]
+                }
+            }
+        }
+    ]);
+
+    if (balanceData.length === 0) return 0;
+
+    return balanceData[0].balance;
+}
 
 const AccountModel = model<AccountDocument, Model<AccountDocument>>('Account', accountSchema);
 

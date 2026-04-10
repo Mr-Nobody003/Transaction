@@ -1,6 +1,6 @@
 import express from "express";
-import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { createAccountController } from "../controllers/account.controller.js";
+import { authMiddleware, systemUserAuthMiddleware } from "../middlewares/auth.middleware.js";
+import { createAccountController, getUserAccountController } from "../controllers/account.controller.js";
 
 
 
@@ -13,5 +13,7 @@ const accountRouter = express.Router();
 
 
 accountRouter.post("/", authMiddleware, createAccountController);
+
+accountRouter.get("/", systemUserAuthMiddleware, getUserAccountController);
 
 export default accountRouter;

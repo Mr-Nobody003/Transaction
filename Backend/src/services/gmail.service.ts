@@ -61,14 +61,38 @@ const sendEmail = async (to: string, subject: string, text: string, html: string
 };
 
 //Function to send registration email
-async function sendRegistrationEmail(userEmail:string,name:string) {
+async function sendRegistrationEmail(userEmail: string, name: string) {
     const subject = "WELCOME TO TRANSACTION"
     const text = `Hello ${name} , \n \n Thankyou for registering with Transaction. We are excited to have you on board. \n \n Best reguards \n The TRANSACTION team`;
     const html = `<p>Hello ${name} ,</p> 
                     <p>Thankyou for registering with Transaction. We are excited to have you on board.</p> 
                     <p>Best reguards ,</p> <p>The TRANSACTION team </p>`;
-    
-    await sendEmail(userEmail,subject,text,html);
+
+    await sendEmail(userEmail, subject, text, html);
 }
 
-export default sendRegistrationEmail;
+async function sendTransactionNotificationEmail(userEmail: string, name: string, amount: number, transactionId: string) {
+    const subject = "TRANSACTION SUCCESSFULLY PROCESSED"
+    const text = `Hello ${name} , \n \n A transaction of amount ${amount} has been processed with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately. \n \n Best reguards \n The TRANSACTION team`;
+    const html = `<p>Hello ${name} ,</p> 
+                    <p>A transaction of amount ${amount} has been processed with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately.</p> 
+                    <p>Best reguards ,</p> <p>The TRANSACTION team </p>`;
+    await sendEmail(userEmail, subject, text, html);
+}
+
+async function sendTransactionFailureEmail(userEmail: string, name: string, amount: number, transactionId: string) {
+    const subject = "TRANSACTION FAILURE ALERT"
+    const text = `Hello ${name} , \n \n We regret to inform you that a transaction of amount ${amount} with transaction ID: ${transactionId} has failed. Please check your account and try again. If the issue persists, contact support for assistance. \n \n Best reguards \n The TRANSACTION team`;
+    const html = `<p>Hello ${name} ,</p> 
+                    <p>We regret to inform you that a transaction of amount ${amount} with transaction ID: ${transactionId} has failed. Please check your account and try again. If the issue persists, contact support for assistance.</p> 
+                    <p>Best reguards ,</p> <p>The TRANSACTION team </p>`;
+    await sendEmail(userEmail, subject, text, html);
+}
+
+
+
+export {
+    sendRegistrationEmail,
+    sendTransactionNotificationEmail,
+    sendTransactionFailureEmail
+};
