@@ -6,7 +6,7 @@ const port: number = Number(process.env.PORT) || 3000;
 async function startServer() {
     try {
         await connecttodb();
-        
+
         // Vercel sets the VERCEL environment variable.
         // We only want to call listen() when running locally.
         if (!process.env.VERCEL) {
@@ -22,6 +22,12 @@ async function startServer() {
     }
 }
 
+// On Vercel (serverless), ensure DB is connected before handling requests
+if (process.env.VERCEL) {
+    connecttodb().catch(console.error);
+}
+
 startServer();
 
 export default app;
+
