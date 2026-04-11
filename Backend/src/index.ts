@@ -8,7 +8,8 @@ import cookieParser from 'cookie-parser';
 import authRouter from './routes/auth.route.js';
 import accountRouter from './routes/account.route.js';
 import transactionRouter from './routes/transaction.route.js';
-import { dbMiddleware } from './middleware/db.middleware.js';
+import { dbMiddleware } from './middlewares/db.middleware.js';
+
 
 dotenv.config();
 
