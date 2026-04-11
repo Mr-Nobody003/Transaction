@@ -22,10 +22,8 @@ async function startServer() {
     }
 }
 
-// On Vercel (serverless), ensure DB is connected before handling requests
-if (process.env.VERCEL) {
-    connecttodb().catch(console.error);
-}
+// DB connection is now handled by dbMiddleware in src/index.ts
+
 
 startServer();
 

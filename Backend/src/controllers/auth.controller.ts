@@ -102,11 +102,16 @@ async function userLoginController(req: Request, res: Response) {
         );
     }
 
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET environment variable is missing on Vercel");
+    }
+
     const token = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET as string,
         { expiresIn: "3d" }
     );
+
     res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
