@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { connecttodb } from './config/db.js';
 import cookieParser from 'cookie-parser';
 
 /**
@@ -16,8 +15,6 @@ dotenv.config();
  * @version - v1
  */
 const app = express();
-const port: number = 3000;
-
 
 app.use(express.json());
 app.use(cookieParser());
@@ -34,21 +31,4 @@ app.get("/", (req, res) => {
     res.send("Transaction API is LIVE");
 });
 
-
-
-
-
-
-async function startServer() {
-    try {
-        await connecttodb();
-        app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        });
-    } catch (err) {
-        console.error("Failed to start server:", err);
-        process.exit(1);
-    }
-}
-
-startServer();
+export default app;
