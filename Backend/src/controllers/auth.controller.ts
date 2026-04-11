@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import UserModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { sendRegistrationEmail } from "../services/gmail.service.js";
+import TokenBlacklistModel from '../models/token.blacklist.model.js';
 
 /**
  * @description User Registration Controller
@@ -126,7 +127,41 @@ async function userLoginController(req: Request, res: Response) {
 }
 
 
+/**
+ * @description User Logout Controller
+ * @route POST /api/v1/auth/logout
+ * @access Public
+ */
+async function userLogoutController(req: Request, res: Response) {
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
 
+    if (!token) {
+        return res.status(400).json(
+            {
+                message: "Token is required for logout",
+                status: "Failed to logout"
+            }
+        );
+    }
 
+    res.clearCookie("token",{
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    });
 
-export { userRegisterController, userLoginController };
+    await TokenBlacklistModel.create({ token: token });
+
+    res.status(200).json(
+        {
+            message: "User logged out successfully",
+            status: "Success"
+        }
+    );
+}
+
+export { 
+    userRegisterController, 
+    userLoginController , 
+    userLogoutController 
+};

@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import UserModel from "../models/user.model.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import TokenBlacklistModel from '../models/token.blacklist.model.js';
+
 
 
 
@@ -16,6 +18,14 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     if (!token) {
         return res.status(401).json({
             "message": "Unauthorize Access , Token Missing"
+        });
+    }
+
+    const blacklistedToken = await TokenBlacklistModel.findOne({ token: token });
+
+    if (blacklistedToken) { 
+        return res.status(401).json({
+            "message": "Unauthorize Access , Token is blacklisted"
         });
     }
 
@@ -53,6 +63,16 @@ async function systemUserAuthMiddleware(req: Request, res: Response, next: NextF
             "message": "Unauthorize Access , Token Missing"
         });
     }
+
+    const blacklistedToken = await TokenBlacklistModel.findOne({ token: token });
+
+    if (blacklistedToken) { 
+        return res.status(401).json({
+            "message": "Unauthorize Access , Token is blacklisted"
+        });
+    }
+
+    
     const decode = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
 
     const user = await UserModel.findById(decode.userId).select("+systemUser");

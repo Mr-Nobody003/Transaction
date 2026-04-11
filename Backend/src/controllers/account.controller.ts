@@ -44,4 +44,36 @@ async function getUserAccountController(req: Request, res: Response) {
     });
 }
 
-export { createAccountController, getUserAccountController };
+/**
+ * @description Account Balance Controller
+ * @route GET /api/v1/accounts/balance/:accountId
+ * @access PROTECTED
+ */
+async function getAccountBalance(req: Request, res: Response) {
+    const accountId = req.params.accountId as string;
+    const account = await AccountModel.findOne(
+        {
+            _id: accountId,
+            user: req.user._id
+        });
+
+    if (!account) {
+        return res.status(404).json({
+            message: "Account not found",
+            status: "Failed to get account balance"
+        });
+    }
+
+    const balance = await account.getBalance();
+
+    return res.status(200).json({
+        accountId: account._id,
+        balance
+    });
+}
+
+export {
+    createAccountController,
+    getUserAccountController,
+    getAccountBalance
+};

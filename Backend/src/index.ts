@@ -12,6 +12,9 @@ import transactionRouter from './routes/transaction.route.js';
 
 dotenv.config();
 
+/**
+ * @version - v1
+ */
 const app = express();
 const port: number = 3000;
 
@@ -20,7 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 /**
- * @description use Routes
+ * @description use Routes @version - v1
  */
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/accounts", accountRouter);
@@ -28,7 +31,7 @@ app.use("/api/v1/transactions", transactionRouter);
 
 
 app.get("/", (req, res) => {
-    res.send("Hello World");
+    res.send("Transaction API is LIVE");
 });
 
 
