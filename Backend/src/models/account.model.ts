@@ -8,7 +8,7 @@ interface IAccount {
 }
 
 interface IAccountMethods {
-    getBalance(): Promise<any>;
+    getBalance(session?: mongoose.ClientSession): Promise<any>;
 }
 
 type AccountDocument = IAccount & Document & IAccountMethods;
@@ -47,7 +47,8 @@ accountSchema.index({ user: 1, status: 1 }) //to index user , status
 
 
 
-accountSchema.methods.getBalance = async function () {
+accountSchema.methods.getBalance = async function (session?: mongoose.ClientSession) {
+    const aggregateOptions = session ? { session } : undefined;
     const balanceData = await LedgerModel.aggregate([
         {
             $match: {
@@ -89,7 +90,7 @@ accountSchema.methods.getBalance = async function () {
                 }
             }
         }
-    ]);
+    ], aggregateOptions);
 
     if (balanceData.length === 0) return 0;
 

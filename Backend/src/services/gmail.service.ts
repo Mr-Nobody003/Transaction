@@ -46,7 +46,7 @@ transporter.verify((error, success) => {
 const sendEmail = async (to: string, subject: string, text: string, html: string): Promise<void> => {
     try {
         const info: nodemailer.SentMessageInfo = await transporter.sendMail({
-            from: `"Your Name" <${process.env.EMAIL_USER}>`, // sender address
+            from: `"TRANSACTION" <${process.env.EMAIL_USER}>`, // sender address
             to, // list of receivers
             subject, // Subject line
             text, // plain text body
@@ -71,13 +71,22 @@ async function sendRegistrationEmail(userEmail: string, name: string) {
     await sendEmail(userEmail, subject, text, html);
 }
 
-async function sendTransactionNotificationEmail(userEmail: string, name: string, amount: number, transactionId: string) {
+async function sendTransactionNotificationEmail_debited_USER(UserEmail: string, name: string, amount: number, transactionId: string) {
     const subject = "TRANSACTION SUCCESSFULLY PROCESSED"
     const text = `Hello ${name} , \n \n A transaction of amount ${amount} has been processed with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately. \n \n Best reguards \n The TRANSACTION team`;
     const html = `<p>Hello ${name} ,</p> 
-                    <p>A transaction of amount ${amount} has been processed with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately.</p> 
+                    <p>A transaction of amount ${amount} has been (debited) processed with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately.</p> 
                     <p>Best reguards ,</p> <p>The TRANSACTION team </p>`;
-    await sendEmail(userEmail, subject, text, html);
+    await sendEmail(UserEmail, subject, text, html);
+}
+
+async function sendTransactionNotificationEmail_credited_USER(UserEmail: string, name: string, amount: number, transactionId: string) {
+    const subject = "TRANSACTION CREDITED TO YOUR ACCOUNT"
+    const text = `Hello ${name} , \n \n A transaction of amount ${amount} has been credited to your account with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately. \n \n Best reguards \n The TRANSACTION team`;
+    const html = `<p>Hello ${name} ,</p> 
+                    <p>A transaction of amount ${amount} has been credited to your account with transaction ID: ${transactionId}. If you did not authorize this transaction, please contact support immediately.</p> 
+                    <p>Best reguards ,</p> <p>The TRANSACTION team </p>`;
+    await sendEmail(UserEmail, subject, text, html);
 }
 
 async function sendTransactionFailureEmail(userEmail: string, name: string, amount: number, transactionId: string) {
@@ -93,6 +102,7 @@ async function sendTransactionFailureEmail(userEmail: string, name: string, amou
 
 export {
     sendRegistrationEmail,
-    sendTransactionNotificationEmail,
+    sendTransactionNotificationEmail_debited_USER,
+    sendTransactionNotificationEmail_credited_USER,
     sendTransactionFailureEmail
 };

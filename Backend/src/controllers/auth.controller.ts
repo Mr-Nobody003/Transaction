@@ -51,7 +51,6 @@ async function userRegisterController(req: Request, res: Response) {
                 email: user.email,
                 name: user.name
             },
-            token,
             message: "User created successfully",
             status: "Success"
         }
@@ -124,7 +123,6 @@ async function userLoginController(req: Request, res: Response) {
                 email: user.email,
                 name: user.name
             },
-            token,
             message: "User Logged successfully",
             status: "Success"
         }

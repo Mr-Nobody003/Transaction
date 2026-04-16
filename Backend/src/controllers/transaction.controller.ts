@@ -2,8 +2,78 @@ import { Request, Response } from 'express';
 import AccountModel from "../models/account.model.js";
 import TransactionModel from "../models/transaction.model.js";
 import mongoose from 'mongoose';
+import { sendTransactionFailureEmail, sendTransactionNotificationEmail_credited_USER, sendTransactionNotificationEmail_debited_USER } from '../services/gmail.service.js';
 import LedgerModel from '../models/ledger.model.js';
-import { sendTransactionFailureEmail, sendTransactionNotificationEmail } from '../services/gmail.service.js';
+import UserModel from '../models/user.model.js';
+import AcceptanceModel from '../models/acceptance.model.js';
+
+
+/**
+ * @description Transaction Acceptance Controller
+ * @route POST /api/v1/transactions/accept
+ * @access Public
+ */
+async function createTransactionAcceptance(req: Request, res: Response) {
+    const { AcceptfromAccount, duration } = req.body;
+    if (!AcceptfromAccount || !duration) {
+        return res.status(400).json(
+            {
+                "message": "AcceptfromAccount, duration are required"
+            })
+    }
+    const acceptorAccountUser = await AccountModel.findOne({ user: req.user._id });
+    if (!acceptorAccountUser) {
+        return res.status(400).json(
+            {
+                "message": "acceptorAccountUser does not exsists"
+            });
+    }
+
+    const AcceptfromAccountUser = await AccountModel.findOne({ _id: AcceptfromAccount });
+    if (!AcceptfromAccountUser) {
+        return res.status(400).json(
+            {
+                "message": "fromAccountUser does not exsists"
+            });
+    }
+
+    //check if both user account are active for transaction to proceed
+    if (acceptorAccountUser.status !== "ACTIVE") {
+        return res.status(400).json(
+            {
+                "message": "acceptorAccount user account is not active"
+            });
+    }
+    if (AcceptfromAccountUser.status !== "ACTIVE") {
+        return res.status(400).json(
+            {
+                "message": "fromAccount user account is not active"
+            });
+    }
+
+    const existingAcceptance = await AcceptanceModel.findOne({
+        Acceptor: acceptorAccountUser._id as unknown as mongoose.Schema.Types.ObjectId,
+        Sender: AcceptfromAccount as unknown as mongoose.Schema.Types.ObjectId
+    });
+    if (existingAcceptance) {
+        return res.status(400).json(
+            {
+                "message": "An acceptance already exists between these accounts"
+            });
+    }
+
+    const acceptance = await AcceptanceModel.create({
+        Acceptor: acceptorAccountUser._id as unknown as mongoose.Schema.Types.ObjectId,
+        Sender: AcceptfromAccount as unknown as mongoose.Schema.Types.ObjectId,
+        duration
+    });
+
+    return res.status(201).json({
+        "message": "Acceptance created successfully",
+        acceptance
+    });
+}
+
 
 /**
  * @description Transaction Creation Controller
@@ -22,6 +92,13 @@ async function createTransactionController(req: Request, res: Response) {
             })
     }
 
+    if (fromAccount === toAccount) {
+        return res.status(400).json(
+            {
+                "message": "fromAccount and toAccount cannot be same"
+            })
+    }
+
     //check if users are valid 
     const fromAccountUser = await AccountModel.findOne({ _id: fromAccount });
     if (!fromAccountUser) {
@@ -31,11 +108,31 @@ async function createTransactionController(req: Request, res: Response) {
             });
     }
 
+    //check if req is tampered with by verifying if fromAccount belongs to the user making request
+    if (fromAccountUser.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json(
+            {
+                "message": "Unauthorized: fromAccount does not belong to the authenticated user"
+            })
+    }
+
     const toAccountUser = await AccountModel.findOne({ _id: toAccount });
     if (!toAccountUser) {
         return res.status(400).json(
             {
                 "message": "toAccountUser does not exsists"
+            });
+    }
+
+    const acceptance = await AcceptanceModel.findOne({
+        Acceptor: toAccount as unknown as mongoose.Schema.Types.ObjectId,
+        Sender: fromAccount as unknown as mongoose.Schema.Types.ObjectId
+    });
+    if (!acceptance) {
+        return res.status(401).json(
+            {
+                "Alert": "Transaction not allowed",
+                "message": "No acceptance found for this transaction. Please ensure that the recipient has accepted transactions from the sender."
             });
     }
 
@@ -79,21 +176,11 @@ async function createTransactionController(req: Request, res: Response) {
         }
     }
 
-    //derive balance from sender
-    const fromUserBalance = await fromAccountUser.getBalance();
-
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
         return res.status(400).json({
             "message": "amount must be a valid number greater than 0",
         });
     }
-
-    if (fromUserBalance < numericAmount) {
-        return res.status(400).json({
-            "message": `Insufficient Balance , Current balance ${fromUserBalance} , Requested amount is ${numericAmount}`,
-        });
-    }
-
 
     //Create transaction session , (PENDING)
     /** 
@@ -106,6 +193,16 @@ async function createTransactionController(req: Request, res: Response) {
     let pendingTransactionId: string = "N/A";
 
     try {
+        //derive balance from sender safely INSIDE the active transaction
+        const fromUserBalance = await fromAccountUser.getBalance(session);
+
+        if (fromUserBalance < numericAmount) {
+            await session.abortTransaction();
+            // Don't call endSession() explicitly here to avoid breaking finally block
+            return res.status(400).json({
+                "message": `Insufficient Balance , Current balance ${fromUserBalance} , Requested amount is ${numericAmount}`,
+            });
+        }
         const transaction = new TransactionModel({
             from_Account: fromAccount,
             to_Account: toAccount,
@@ -184,12 +281,21 @@ async function createTransactionController(req: Request, res: Response) {
     if (transactionResult) {
         try {
             // Send email non-blocking to prevent transaction response failure
-            await sendTransactionNotificationEmail(
+            await sendTransactionNotificationEmail_debited_USER(
                 (req as any).user.email,
                 (req as any).user.name,
                 numericAmount,
                 transactionResult.transaction._id.toString()
             );
+            const touser = await UserModel.findById(toAccountUser.user);
+            if (touser) {
+                await sendTransactionNotificationEmail_credited_USER(
+                    touser.email,
+                    touser.name,
+                    numericAmount,
+                    transactionResult.transaction._id.toString()
+                );
+            }
         } catch (emailError) {
             console.error("Failed to send transaction notification email:", emailError);
         }
@@ -343,12 +449,21 @@ async function createInitialUserFundsTransaction(req: Request, res: Response) {
     if (transactionResult) {
         try {
             // Send email non-blocking to prevent transaction response failure
-            await sendTransactionNotificationEmail(
+            await sendTransactionNotificationEmail_debited_USER(
                 (req as any).user.email,
                 (req as any).user.name,
                 numericAmount,
-                transactionResult.transaction._id.toString()
+                transactionResult.transaction._id.toString(),
             );
+            const touser = await UserModel.findById(toAccountUser.user);
+            if (touser) {
+                await sendTransactionNotificationEmail_credited_USER(
+                    touser.email,
+                    touser.name,
+                    numericAmount,
+                    transactionResult.transaction._id.toString()
+                );
+            }
         } catch (emailError) {
             console.error("Failed to send transaction notification email:", emailError);
         }
@@ -363,4 +478,10 @@ async function createInitialUserFundsTransaction(req: Request, res: Response) {
 
 }
 
-export { createTransactionController, createInitialUserFundsTransaction };
+
+
+export {
+    createTransactionController,
+    createInitialUserFundsTransaction,
+    createTransactionAcceptance
+};
