@@ -1,0 +1,56 @@
+name: Release Backend Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: Backend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: Backend
+        run: npm run build
+
+      - name: Create release bundle
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          rm -rf release
+          mkdir -p release/backend
+          cp -r Backend/dist release/backend/dist
+          cp Backend/package.json release/backend/package.json
+          cp Backend/package-lock.json release/backend/package-lock.json
+          cp README.md release/backend/README.md
+          cd release
+          zip -r "backend-${RELEASE_TAG}.zip" backend
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release/backend-${{ github.ref_name }}.zip
