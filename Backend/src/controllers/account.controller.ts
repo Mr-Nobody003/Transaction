@@ -29,7 +29,7 @@ async function createAccountController(req: Request, res: Response) {
 }
 
 /**
- * @description Account Creation Controller
+ * @description Account Retrival Controller
  * @route GET /api/v1/accounts
  * @access PROTECTED
  */
@@ -72,8 +72,32 @@ async function getAccountBalance(req: Request, res: Response) {
     });
 }
 
+async function getUserAccountBalance(req: Request, res: Response) {
+    const accountId = req.params.accountId as string;
+    const account = await AccountModel.findOne(
+        {
+            _id: accountId
+        });
+
+    if (!account) {
+        return res.status(404).json({
+            message: "Account not found",
+            status: "Failed to get account balance"
+        });
+    }
+
+    const balance = await account.getBalance();
+
+    return res.status(200).json({
+        accountId: account._id,
+        balance
+    });
+}
+
+
 export {
     createAccountController,
     getUserAccountController,
-    getAccountBalance
+    getAccountBalance,
+    getUserAccountBalance
 };

@@ -4,15 +4,16 @@ import { createInitialUserFundsTransaction, createTransactionAcceptance, createT
 
 
 /**
- * @description Create new Transaction @Route POST api/v1/transactions/
- * @description Initialize System User Funds Transaction @Route POST api/v1/transactions/admin/initialize-funds
+ * @description Create new Transaction @Route POST api/v1/transactions/send-funds
+ * @description Accept Transaction @Route POST api/v1/transactions/accept
+ * @description Initialize System User Funds Transaction @Route POST api/v1/transactions/system/initialize-funds
  * @protected route
  */
 const transactionRouter = express.Router();
 
 
-transactionRouter.post("/", authMiddleware, createTransactionController);
 transactionRouter.post("/accept", authMiddleware, createTransactionAcceptance);
-transactionRouter.post("/admin/initialize-funds", systemUserAuthMiddleware, createInitialUserFundsTransaction);
+transactionRouter.post("/send-funds", authMiddleware, createTransactionController);
+transactionRouter.post("/system/initialize-funds", systemUserAuthMiddleware, createInitialUserFundsTransaction);
 
 export default transactionRouter;

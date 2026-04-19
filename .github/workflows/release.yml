@@ -46,11 +46,11 @@ jobs:
           cp Backend/package-lock.json release/backend/package-lock.json
           cp README.md release/backend/README.md
           cd release
-          zip -r "backend-${RELEASE_TAG}.zip" backend
+          zip -r "TRANSACTION-${RELEASE_TAG}.zip" backend
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
           generate_release_notes: true
-          files: release/backend-${{ github.ref_name }}.zip
+          files: release/TRANSACTION-${{ github.ref_name }}.zip

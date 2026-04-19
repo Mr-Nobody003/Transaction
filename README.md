@@ -16,6 +16,7 @@ A secure, scalable RESTful API built with **Node.js, Express, TypeScript, and Mo
 
 * **Transaction Processing**:
   * Secure initiation of funds transfer.
+  * Only accept Transactions from known users.
   * Maintain an immutable ledger of transactions.
   * Specialized routes for System User fund initialization.
 
@@ -104,12 +105,15 @@ Ensure you have the following installed:
 
 ### Accounts `(/api/v1/accounts)`
 * `POST /` - Create a new user account (Protected)
-* `GET /` - Get system user accounts (System Admin Protected)
-* `GET /balance/:accountId` - Fetch real-time total calculated balance for an account (Protected)
+* `GET /` - Get user account (Protected)
+* `GET /system` - Get System user account (System Admin Protected)
+* `GET /balance/:accountId` - Fetch real-time total calculated balance for the logged in account (Protected)
+* `GET /system/balance/:accountId` - Fetch real-time total calculated balance for any account (System Admin Protected)
 
 ### Transactions `(/api/v1/transactions)`
-* `POST /` - Create/initiate a new transaction (Protected)
-* `POST /admin/initialize-funds` - System User initialization transaction (Protected)
+* `POST /send-funds` - Create/initiate a new transaction (Protected)
+* `POST /accept` - Accept transactions (Protected)
+* `POST /system/initialize-funds` - System User initialization transaction (System Admin Protected)
 
 ---
 
